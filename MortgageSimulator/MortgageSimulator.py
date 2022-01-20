@@ -102,12 +102,12 @@ with col1:
     st.header("**Loan Details**")
 
 # **Outputs**
-    st.subheader("Loan Amount: $" + str(round(loan_amount, 2)))
+    st.subheader(f"Loan Amount: ${int(loan_amount):,}")
     if down_payment > 0:
-        st.subheader("Down Payment: $" + str(round(down_payment,2)))
-    st.subheader(payment_frequency + " Installment: $" + str(round(periodic_installment, 2)))
-    st.subheader("Total Interest: $" + str(round(cumulative_interest_paid[-1], 2)))
-    st.subheader("Total Repayment: $" + str(round(cumulative_interest_paid[-1] + cumulative_home_equity[-1], 2)))
+        st.subheader(f"Down Payment: ${round(down_payment,2):,)}")
+    st.subheader(f"{payment_frequency} Installment: ${round(periodic_installment, 2):,}")
+    st.subheader(f"Total Interest: ${round(cumulative_interest_paid[-1], 2):,}")
+    st.subheader(f"Total Repayment: ${round(cumulative_interest_paid[-1] + cumulative_home_equity[-1], 2):,}")
 
 # **Visuals**
 with col2:
@@ -115,6 +115,14 @@ with col2:
     
     # Visual: Equity and interest totals calculations
     fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=period_num, 
+            y=total_pay_arr,
+            name="Total Repayment"
+        )
+    )
+
     fig.add_trace(
             go.Scatter(
                 x=period_num, 
@@ -131,21 +139,13 @@ with col2:
             )
         )
 
-    fig.add_trace(
-            go.Scatter(
-                x=period_num, 
-                y=total_pay_arr,
-                name="Total Repayment"
-            )
-        )
-
     fig.update_layout(title='Cumulative Loan Equity Over Time',
                     xaxis_title=period,
                     yaxis_title='Amount($)',
                     height= 500,
                     width = 1200,
                     legend= dict(
-                            orientation="h",
+                            orientation="v",
                             yanchor='top',
                             y=0.98,
                             xanchor= 'left',
@@ -166,7 +166,7 @@ fig = make_subplots(
     rows=1, cols=2,
     vertical_spacing=0.03,
     specs=[
-        {"type": "table"}, {"type": "scatter"}
+        [{"type": "table"}, {"type": "scatter"}]
         ]
 )
 
@@ -197,7 +197,7 @@ fig.append_trace(
             y=interest_pay_arr,
             name="Interest Payment"
         ),
-        row=2, col=1
+        row=1, col=2
     )
 
 fig.update_layout(title='Mortgage Installment Payment Over Months',
@@ -206,11 +206,11 @@ fig.update_layout(title='Mortgage Installment Payment Over Months',
                 height= 800,
                 width = 1200,
                 legend= dict(
-                        orientation="h",
+                        orientation="v",
                         yanchor='top',
-                        y=0.47,
+                        y=0.98,
                         xanchor= 'left',
-                        x= 0.01
+                        x= 0.58
                     )
                 )
 
