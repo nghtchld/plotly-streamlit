@@ -9,6 +9,18 @@ data = pd.read_csv("avocado.csv")
 data["Date"] = pd.to_datetime(data["Date"], format="%Y-%m-%d")
 data.sort_values("Date", inplace=True)
 
+region_labels = [
+                    {"label": region, "value": region}
+                    for region in np.sort(data.region.unique())
+                ]
+region_labels.insert(0,{'label': 'All Regions', 'value': 'All Regions'})
+
+avocado_type_labels = [
+                        {"label": avocado_type, "value": avocado_type}
+                        for avocado_type in data.type.unique()
+                    ]
+avocado_type_labels.insert(0,{'label': 'All Types', 'value': 'All Types'})
+
 external_stylesheets = [
     {
         "href": "https://fonts.googleapis.com/css2?"
@@ -43,10 +55,7 @@ app.layout = html.Div(
                         html.Div(children="Region", className="menu-title"),
                         dcc.Dropdown(
                             id="region-filter",
-                            options=[
-                                {"label": region, "value": region}
-                                for region in np.sort(data.region.unique())
-                            ],
+                            options=region_labels,
                             value="Albany",
                             clearable=False,
                             className="dropdown",
@@ -58,10 +67,7 @@ app.layout = html.Div(
                         html.Div(children="Type", className="menu-title"),
                         dcc.Dropdown(
                             id="type-filter",
-                            options=[
-                                {"label": avocado_type, "value": avocado_type}
-                                for avocado_type in data.type.unique()
-                            ],
+                            options=avocado_type_labels,
                             value="organic",
                             clearable=False,
                             searchable=False,
@@ -119,17 +125,31 @@ app.layout = html.Div(
 )
 def update_charts(region, avocado_type, start_date, end_date):
     mask = (
-        (data.region == region)
-        & (data.type == avocado_type)
-        & (data.Date >= start_date)
+        (data.Date >= start_date)
         & (data.Date <= end_date)
     )
+
+    if region != 'All Regions' and avocado_type != 'All Types':
+        mask = mask & (data.region == region) & (data.type == avocado_type)
+    elif region != 'All Regions' and avocado_type == 'All Types':
+        mask = mask & (data.region == region)
+    elif region == 'All Regions' and avocado_type != 'All Types':
+        mask = mask & (data.type == avocado_type)
+
     filtered_data = data.loc[mask, :]
+
+    if region != 'All Regions' and avocado_type != 'All Types':
+        date_price_x = filtered_data["Date"]
+        avg_price_y = filtered_data["AveragePrice"]
+    else:
+        date_price_x = filtered_data["Date"].unique()
+        avg_price_y = filtered_data.groupby('Date')["AveragePrice"].mean()
+
     price_chart_figure = {
         "data": [
             {
-                "x": filtered_data["Date"],
-                "y": filtered_data["AveragePrice"],
+                "x": date_price_x,
+                "y": avg_price_y,
                 "type": "lines",
                 "hovertemplate": "$%{y:.2f}<extra></extra>",
             },
@@ -146,11 +166,18 @@ def update_charts(region, avocado_type, start_date, end_date):
         },
     }
 
+    if region != 'All Regions' and avocado_type != 'All Types':
+        date_volume_x = filtered_data["Date"]
+        total_volume_y = filtered_data["Total Volume"]
+    else:
+        date_volume_x = filtered_data["Date"].unique()
+        total_volume_y = filtered_data.groupby('Date')["Total Volume"].sum()
+
     volume_chart_figure = {
         "data": [
             {
-                "x": filtered_data["Date"],
-                "y": filtered_data["Total Volume"],
+                "x": date_volume_x,
+                "y": total_volume_y,
                 "type": "lines",
             },
         ],
